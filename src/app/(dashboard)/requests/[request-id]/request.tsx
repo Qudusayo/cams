@@ -18,7 +18,7 @@ import { z } from "zod";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
-import { cn, formatMoney } from "@/lib/utils";
+import { cn, formatMoney, getDueDate } from "@/lib/utils";
 import { PopoverContent } from "@radix-ui/react-popover";
 import { CalendarIcon, Dot } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -31,11 +31,21 @@ import { Badge } from "@/components/ui/badge";
 import { Form as FormType, Status, FormStatus } from "@prisma/client";
 import { statusView } from "@/components/request-row";
 import moment from "moment";
+import { Progress } from "@/components/ui/progress";
 
 type iFormData = FormType & {
   statuses: ({
     updatedBy: { name: string | null };
   } & Status)[];
+};
+
+const progress: Record<FormStatus, number> = {
+  SUBMITTED: 17,
+  HODENDORSED: 33,
+  BURSERENDORSED: 50,
+  BURSERAPPROVED: 67,
+  LOANADVANCED: 100,
+  REJECTED: 100,
 };
 
 const Request = ({
@@ -131,12 +141,18 @@ const Request = ({
   }, []);
 
   const index = formData.requestNo.toString().padStart(3, "0");
+  const dueDays = getDueDate(formData.dateToRetireAdvance);
 
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="space-y-2">
           <h2 className="text-3xl font-semibold">REQUEST #{index}</h2>
+          <Badge variant={"destructive"}>
+            {dueDays > 0
+              ? `Due in ${dueDays} days`
+              : `${+dueDays} days overdue`}
+          </Badge>
         </div>
 
         <div className="space-y-2">
@@ -151,7 +167,7 @@ const Request = ({
               <Dot size={50} className="absolute -left-4" />
               <span>REJECTED</span>
             </Badge>
-          ) : isApproved ? (
+          ) : isApproved || formData.status === "LOANADVANCED" ? (
             <Badge variant="default" className="relative pl-5 capitalize">
               <Dot size={50} className="absolute -left-4" />
               <span>Approved</span>
@@ -181,6 +197,9 @@ const Request = ({
       </div>
 
       <div className="flex-1 rounded-2xl bg-white p-4 space-y-4">
+        {formData.status !== "REJECTED" && (
+          <Progress value={progress[formData.status]} className="h-2" />
+        )}
         <Chained status="SUBMITTED" createdAt={formData.createdAt}>
           <Form {...form}>
             <div className="space-y-6">
