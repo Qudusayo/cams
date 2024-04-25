@@ -16,7 +16,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       {!isFormPage && (
         <div className="flex items-end justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Requests</h2>
+            <h2 className="text-xl font-semibold">Dashboard</h2>
             <p>Submit cash advance request</p>
           </div>
 

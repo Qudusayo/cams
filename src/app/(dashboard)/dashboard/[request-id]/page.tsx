@@ -2,7 +2,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/auth-options";
 import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import Request from "./request";
+import Request from "../../requests/[request-id]/request";
 
 async function getFormData(requestId: string) {
   const formData = await prisma.form.findUnique({
@@ -46,7 +46,7 @@ const page = async ({ params }: { params: { "request-id": string } }) => {
 
   return (
     <div>
-      <Request formData={formData} />
+      <Request formData={formData} viewOnly />
     </div>
   );
 };

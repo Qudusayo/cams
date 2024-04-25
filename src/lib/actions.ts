@@ -127,6 +127,9 @@ export async function updateRequest(formId: string, status: FormStatus) {
     }
 
     revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/${formId}`);
+    revalidatePath("/requests");
+    revalidatePath(`/requests/${formId}`);
 
     return {
       request: updatedRequest,

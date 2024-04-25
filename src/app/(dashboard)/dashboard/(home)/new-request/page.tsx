@@ -21,15 +21,17 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { PopoverContent } from "@radix-ui/react-popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, LoaderCircle } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSchema } from "@/lib/constant";
 import { fileRequest } from "@/lib/actions";
 import { useToast } from "@/components/ui/use-toast";
+import { useEffect, useState } from "react";
 
 const NewRequest = () => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -51,25 +53,44 @@ const NewRequest = () => {
   });
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
-    const { request, errors } = await fileRequest(data);
+    try {
+      setIsSubmitting(true);
+      const { request, errors } = await fileRequest(data);
 
-    if (errors) {
-      console.log(errors);
+      if (errors) {
+        console.log(errors);
+        toast({
+          variant: "destructive",
+          title: "Uh oh! Something went wrong.",
+          description: "There was a problem trying to file your request.",
+        });
+      } else {
+        form.reset();
+        toast({
+          variant: "default",
+          title: "Request submitted successfully.",
+          description: "Your request has been submitted for review.",
+        });
+      }
+    } catch (error) {
+      console.log(error);
       toast({
         variant: "destructive",
         title: "Uh oh! Something went wrong.",
         description: "There was a problem trying to file your request.",
       });
-    } else {
-      console.log(request);
-      form.reset();
-      toast({
-        variant: "default",
-        title: "Request submitted successfully.",
-        description: "Your request has been submitted for review.",
-      });
+    } finally {
+      setIsSubmitting(false);
     }
   }
+
+  useEffect(() => {
+    if (form.watch("dateToRetireAdvance")) {
+      alert(
+        "Late submission of statement may result in salary cut which cannot be refunded except by addition to subsequent Salary payment in the month following that in which the statement is received."
+      );
+    }
+  }, [form.watch("dateToRetireAdvance")]);
 
   return (
     <Form {...form}>
@@ -235,8 +256,10 @@ const NewRequest = () => {
                   <FormDescription>
                     <div className="text-xs text-black font-semibold">
                       <span className="italic">
-                        {toWords(form.watch("amount") || 0).toUpperCase()} NAIRA
-                        ONLY
+                        {isNaN(+form.watch("amount"))
+                          ? "Enter a valid amount"
+                          : toWords(+form.watch("amount")).toUpperCase() +
+                            " NAIRA ONLY"}
                       </span>
                     </div>
                   </FormDescription>
@@ -276,7 +299,10 @@ const NewRequest = () => {
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit" className="space-x-4" disabled={isSubmitting}>
+          {isSubmitting && <LoaderCircle size={15} className="animate-spin" />}
+          <span>Submit</span>
+        </Button>
       </form>
     </Form>
   );
